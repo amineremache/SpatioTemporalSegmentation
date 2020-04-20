@@ -244,14 +244,16 @@ class VoxelizationDataset(VoxelizationDatasetBase):
     label_map = {}
     n_used = 0
     for l in range(self.NUM_LABELS):
-      if l in self.IGNORE_LABELS:
-        label_map[l] = self.ignore_mask
+      if self.IGNORE_LABELS is not None:
+        if l in self.IGNORE_LABELS:
+          label_map[l] = self.ignore_mask
       else:
         label_map[l] = n_used
         n_used += 1
     label_map[self.ignore_mask] = self.ignore_mask
     self.label_map = label_map
-    self.NUM_LABELS -= len(self.IGNORE_LABELS)
+    if self.IGNORE_LABELS is not None:
+      self.NUM_LABELS -= len(self.IGNORE_LABELS)
 
   def _augment_coords_to_feats(self, coords, feats, labels=None):
     norm_coords = coords - coords.mean(0)

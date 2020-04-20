@@ -139,6 +139,12 @@ data_arg.add_argument(
     default='/home/chrischoy/datasets/Stanford3D',
     help='Stanford precropped dataset root dir')
 
+data_arg.add_argument(
+    '--facility_path',
+    type=str,
+    default='/home/neofly/dev/github/SpatioTemporalSegmentation/results/facility',
+    help='Facility precropped dataset root dir')
+
 # Training / test parameters
 train_arg = add_argument_group('Training')
 train_arg.add_argument('--is_train', type=str2bool, default=True)

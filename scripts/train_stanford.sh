@@ -32,4 +32,5 @@ python -m main \
     --data_aug_color_trans_ratio 0.05 \
     --data_aug_color_jitter_std 0.005 \
     --train_phase train \
+    --resume $LOG_DIR/.. \
     $3 2>&1 | tee -a "$LOG"

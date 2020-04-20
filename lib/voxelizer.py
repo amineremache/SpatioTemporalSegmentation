@@ -207,7 +207,6 @@ def test():
   coords[:3] = 0
   labels[:3] = 2
   voxelizer = Voxelizer()
-  print(voxelizer.voxelize(coords, feats, labels))
 
 
 if __name__ == '__main__':

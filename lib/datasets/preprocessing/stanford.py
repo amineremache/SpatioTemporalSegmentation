@@ -9,8 +9,8 @@ from lib.pc_utils import save_point_cloud
 
 import MinkowskiEngine as ME
 
-STANFORD_3D_IN_PATH = '/cvgl/group/Stanford3dDataset_v1.2/'
-STANFORD_3D_OUT_PATH = '/home/chrischoy/datasets/Stanford3D'
+STANFORD_3D_IN_PATH = '/home/neofly/dev/github/superpoint_graph/s3d/data'
+STANFORD_3D_OUT_PATH = '/home/neofly/dev/github/SpatioTemporalSegmentation/results/s3dis'
 
 STANFORD_3D_TO_SEGCLOUD_LABEL = {
     4: 0,
@@ -43,7 +43,7 @@ class Stanford3DDatasetConverter:
   def read_txt(cls, txtfile):
     # Read txt file and parse its content.
     with open(txtfile) as f:
-      pointcloud = [l.split() for l in f]
+      pointcloud = [l.split() for l in f if l != '\n']
     # Load point cloud to named numpy array.
     pointcloud = np.array(pointcloud).astype(np.float32)
     assert pointcloud.shape[1] == 6

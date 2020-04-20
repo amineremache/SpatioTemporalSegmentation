@@ -264,7 +264,7 @@ def save_predictions(coords, upsampled_pred, transformation, dataset, config, it
       orig_coords = coords_original
     orig_pred = upsampled_pred[batch_mask]
     # Undo ignore label masking to fit original dataset label.
-    if dataset.IGNORE_LABELS:
+    if dataset.IGNORE_LABELS is not None:
       if isinstance(dataset, OnlineVoxelizationDatasetBase):
         label2masked = dataset.label2masked
         maskedmax = label2masked[label2masked < 255].max() + 1

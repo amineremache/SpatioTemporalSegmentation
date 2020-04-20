@@ -63,6 +63,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
       raise ValueError("=> no checkpoint found at '{}'".format(checkpoint_fn))
 
   data_iter = data_loader.__iter__()
+
   while is_training:
     for iteration in range(len(data_loader) // config.iter_size):
       optimizer.zero_grad()
@@ -80,7 +81,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         # Preprocess input
         color = input[:, :3].int()
         if config.normalize_color:
-          input[:, :3] = input[:, 1:] / 255. - 0.5
+          input[:, :3] = input[:, :3] / 255. - 0.5
         sinput = SparseTensor(input, coords).to(device)
 
         data_time += data_timer.toc(False)
