@@ -152,7 +152,8 @@ class FacilityTestDataset(FacilityDataset):
     DATA_PATH_FILE = {
         DatasetPhase.Train: ['area1.txt', 'area2.txt', 'area3.txt', 'area4.txt', 'area6.txt'],
         DatasetPhase.Val: 'area5.txt',
-        DatasetPhase.Test: 'area5.txt'
+        DatasetPhase.Test: 'area5.txt',
+        #DatasetPhase.Test: ['area1.txt', 'area2.txt', 'area3.txt', 'area4.txt', 'area5.txt', 'area6.txt']
     }
 
 

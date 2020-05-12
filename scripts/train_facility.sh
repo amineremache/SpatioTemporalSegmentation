@@ -11,7 +11,8 @@ export CUDA_VISIBLE_DEVICES=$1
 
 export BATCH_SIZE=${BATCH_SIZE:-6}
 
-export TIME=$(date +"%Y-%m-%d_%H-%M-%S")
+export TIME=$(date +"%Y-%m-%d_%H")
+#export TIME=$(date +"%Y-%m-%d_%H-%M-%S")
 
 export LOG_DIR=./outputs/FacilityTestDataset/$2/$TIME
 
@@ -28,8 +29,10 @@ python -m main \
     --conv1_kernel_size 5 \
     --log_dir $LOG_DIR \
     --lr 1e-1 \
-    --max_iter 1000 \
-#    --data_aug_color_trans_ratio 0.05 \
-#    --data_aug_color_jitter_std 0.005 \
-    --train_phase train \
+    --max_iter 6000 \
+    --data_aug_color_trans_ratio 0.05 \
+    --data_aug_color_jitter_std 0.005 \
+    --train_phase test \
+    --resume $LOG_DIR/.. \
+    --is_train False \
     $3 2>&1 | tee -a "$LOG"

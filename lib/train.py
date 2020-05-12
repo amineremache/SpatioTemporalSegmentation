@@ -36,7 +36,10 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
   optimizer = initialize_optimizer(model.parameters(), config)
   scheduler = initialize_scheduler(optimizer, config)
-  criterion = nn.CrossEntropyLoss(ignore_index=config.ignore_label)
+  #weights = [0.5, 0.5, 5.0, 5.0]
+  weights = [0.5, 2]
+  class_weights = torch.FloatTensor(weights).cuda()
+  criterion = nn.CrossEntropyLoss(weight=class_weights, ignore_index=config.ignore_label)
 
   writer = SummaryWriter(log_dir=config.log_dir)
 
@@ -64,7 +67,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
   data_iter = data_loader.__iter__()
 
-  while is_training:
+  while not is_training:
     for iteration in range(len(data_loader) // config.iter_size):
       optimizer.zero_grad()
       data_time, batch_loss = 0, 0

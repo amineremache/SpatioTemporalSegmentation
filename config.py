@@ -142,7 +142,7 @@ data_arg.add_argument(
 data_arg.add_argument(
     '--facility_path',
     type=str,
-    default='/home/neofly/dev/github/SpatioTemporalSegmentation/results/facility',
+    default='/home/neofly/dev/github/SpatioTemporalSegmentation/results/facility_4',
     help='Facility precropped dataset root dir')
 
 # Training / test parameters
@@ -207,7 +207,7 @@ test_arg.add_argument(
 test_arg.add_argument(
     '--test_original_pointcloud',
     type=str2bool,
-    default=False,
+    default=True,
     help='Test on the original pointcloud space as given by the dataset using kd-tree.')
 
 # Misc

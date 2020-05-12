@@ -1,7 +1,3 @@
 Area_4/subcloud_1.ply
-Area_4/subcloud_4.ply
 Area_4/subcloud_3.ply
-Area_4/subcloud_5.ply
-Area_4/subcloud_7.ply
-Area_4/subcloud_6.ply
 Area_4/subcloud_2.ply

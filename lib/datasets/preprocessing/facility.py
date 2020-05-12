@@ -9,13 +9,14 @@ from lib.pc_utils import save_point_cloud
 
 import MinkowskiEngine as ME
 
-FACILITY_IN_PATH = '/home/neofly/Desktop/Desktop/facility/data/'
-FACILITY_OUT_PATH = '/home/neofly/dev/github/SpatioTemporalSegmentation/results/facility'
+FACILITY_IN_PATH = '/home/neofly/Desktop/Desktop/facility/2_classes/data'
+FACILITY_OUT_PATH = '/home/neofly/dev/github/facility/results/facility_2'
 
 
 class FacilityDatasetConverter:
 
   CLASSES = ['structure', 'pequipment']
+  #CLASSES = ['CivilSt','Equipment','PipesnD','SteelSt']
   TRAIN_TEXT = 'train'
   VAL_TEXT = 'val'
   TEST_TEXT = 'test'

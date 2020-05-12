@@ -3,19 +3,22 @@ import os
 import shutil
 import tempfile
 import warnings
+import os.path as osp
 
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import average_precision_score, confusion_matrix
 from sklearn.preprocessing import label_binarize
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from lib.utils import Timer, AverageMeter, precision_at_one, fast_hist, per_class_iu, \
     get_prediction, get_torch_device, save_predictions, visualize_results, \
     permute_pointcloud, save_rotation_pred
 
 from MinkowskiEngine import SparseTensor
-
+from lib.utils import FocalLoss, focal_loss 
 
 def print_info(iteration,
                max_iteration,
@@ -59,10 +62,24 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True):
   dataset = data_loader.dataset
   num_labels = dataset.NUM_LABELS
   global_timer, data_timer, iter_timer = Timer(), Timer(), Timer()
-  criterion = nn.CrossEntropyLoss(ignore_index=config.ignore_label)
+  #weights = [0.5, 0.5, 5.0, 5.0]
+  weights = [0.5, 2]
+  class_weights = torch.FloatTensor(weights).cuda()
+  #criterion = nn.CrossEntropyLoss(weight=class_weights, ignore_index=config.ignore_label)
+  criterion = FocalLoss(alpha=1, gamma=2, reduction='none')
   losses, scores, ious = AverageMeter(), AverageMeter(), 0
   aps = np.zeros((0, num_labels))
   hist = np.zeros((num_labels, num_labels))
+
+  if not config.is_train:
+    checkpoint_fn = config.resume + '/weights.pth'
+    if osp.isfile(checkpoint_fn):
+      logging.info("=> loading checkpoint '{}'".format(checkpoint_fn))
+      state = torch.load(checkpoint_fn)
+      model.load_state_dict(state['state_dict'])
+      logging.info("=> loaded checkpoint '{}' (epoch {})".format(checkpoint_fn, state['epoch']))
+    else:
+      raise ValueError("=> no checkpoint found at '{}'".format(checkpoint_fn))
 
   logging.info('===> Start testing')
 
@@ -70,6 +87,9 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True):
   data_iter = data_loader.__iter__()
   max_iter = len(data_loader)
   max_iter_unique = max_iter
+
+  all_preds = []
+  all_labels = []
 
   # Fix batch normalization running mean and std
   model.eval()
@@ -112,7 +132,11 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True):
       output = soutput.F
 
       pred = get_prediction(dataset, output, target).int()
+      
       iter_time = iter_timer.toc(False)
+
+      all_preds.append(pred.cpu().detach().numpy())
+      all_labels.append(target.cpu().detach().numpy())
 
       if config.save_prediction or config.test_original_pointcloud:
         save_predictions(coords, pred, transformation, dataset, config, iteration, save_pred_dir)
@@ -129,7 +153,10 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True):
 
         target = target.to(device)
 
-        cross_ent = criterion(output, target.long())
+        #cross_ent = criterion(output, target.long())
+        cross_ent = criterion(input=output, target=target.long())
+        print("type of focal_loss : ", type(cross_ent))
+        print("focal loss : ", cross_ent)
         losses.update(float(cross_ent), num_sample)
         scores.update(precision_at_one(pred, target), num_sample)
         hist += fast_hist(pred.cpu().numpy().flatten(), target_np.flatten(), num_labels)
@@ -181,6 +208,25 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True):
       hist,
       reordered_ap_class,
       class_names=class_names)
+
+  
+  preds = np.concatenate(all_preds)
+  targets = np.concatenate(all_labels)
+  to_ignore = [i for i in range(len(targets)) if targets[i] == 255]
+  preds_trunc = [preds[i] for i in range(len(preds)) if i not in to_ignore]
+  targets_trunc = [targets[i] for i in range(len(targets)) if i not in to_ignore]
+  cm = confusion_matrix(targets_trunc,preds_trunc,normalize='true')
+  
+  ax= plt.subplot()
+  sns.set(font_scale=1.4)
+  sns.heatmap(cm, fmt='.2%', annot=True, ax = ax, annot_kws={"size": 16}) 
+  ax.set_ylabel('True labels')
+  ax.set_xlabel('Predicted labels') 
+  ax.xaxis.set_ticklabels(['structure', 'pequipment'])
+  ax.yaxis.set_ticklabels(['structure', 'pequipment'])
+  #ax.xaxis.set_ticklabels(['CivilSt','Equipment','PipesnD','SteelSt'])
+  #ax.yaxis.set_ticklabels(['CivilSt','Equipment','PipesnD','SteelSt'])
+  plt.show()
 
   if config.test_original_pointcloud:
     logging.info('===> Start testing on original pointcloud space.')
