@@ -21,7 +21,7 @@ mkdir -p $LOG_DIR
 
 LOG="$LOG_DIR/$TIME.txt"
 
-python -m main \
+CUDA_LAUNCH_BLOCKING=1 python -m main \
     --dataset FacilityTestDataset \
     --batch_size $BATCH_SIZE \
     --scheduler PolyLR \

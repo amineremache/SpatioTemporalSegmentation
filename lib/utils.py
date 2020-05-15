@@ -413,6 +413,7 @@ def one_hot(labels: torch.Tensor,
     shape = labels.shape
     one_hot = torch.zeros(shape[0], num_classes, *shape[1:],
                           device=device, dtype=dtype)
+    print(np.unique(labels.unsqueeze(1).cpu().numpy()))
     return one_hot.scatter_(1, labels.unsqueeze(1), 1.0) + eps
 
 
@@ -454,23 +455,28 @@ def focal_loss(
     input_soft: torch.Tensor = F.softmax(input, dim=1) + eps
 
     # create the labels one hot tensor
-    print("before one_hot")
     target_one_hot: torch.Tensor = one_hot(
         target, num_classes=input.shape[1],
         device=input.device, dtype=input.dtype)
 
-    print("shape of one_hot : ",target_one_hot.shape)
-
+    
+    
+    
     # compute the actual focal loss
     weight = torch.pow(-input_soft + 1., gamma)
-
+    print("weight : ", weight.shape)
+    print("input_soft : ", input_soft.shape)
     focal = -alpha * weight * torch.log(input_soft)
+    print("focal : ", focal.shape)
+    print("target_one_hot : ", target_one_hot.shape)
     loss_tmp = torch.sum(target_one_hot * focal, dim=1)
+    print("loss : ", loss_tmp.shape)
 
     if reduction == 'none':
         loss = loss_tmp
     elif reduction == 'mean':
         loss = torch.mean(loss_tmp)
+        print("mean : ", loss.shape)
     elif reduction == 'sum':
         loss = torch.sum(loss_tmp)
     else:
@@ -510,7 +516,7 @@ class FocalLoss(nn.Module):
     """
 
     def __init__(self, alpha: float, gamma: float = 2.0,
-                 reduction: str = 'none') -> None:
+                 reduction: str = 'mean') -> None:
         super(FocalLoss, self).__init__()
         self.alpha: float = alpha
         self.gamma: float = gamma

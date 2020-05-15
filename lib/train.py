@@ -13,14 +13,16 @@ from lib.solvers import initialize_optimizer, initialize_scheduler
 
 from MinkowskiEngine import SparseTensor
 
+import matplotlib.pyplot as plt
+
 
 def validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn):
-  v_loss, v_score, v_mAP, v_mIoU = test(model, val_data_loader, config, transform_data_fn)
+  v_loss, v_score, v_mAP, v_mIoU, val_losses = test(model, val_data_loader, config, transform_data_fn,validation=True)
   writer.add_scalar('validation/mIoU', v_mIoU, curr_iter)
   writer.add_scalar('validation/loss', v_loss, curr_iter)
   writer.add_scalar('validation/precision_at_1', v_score, curr_iter)
 
-  return v_mIoU
+  return v_mIoU, val_losses
 
 
 def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
@@ -32,14 +34,11 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
   writer = SummaryWriter(log_dir=config.log_dir)
   data_timer, iter_timer = Timer(), Timer()
   data_time_avg, iter_time_avg = AverageMeter(), AverageMeter()
-  losses, scores = AverageMeter(), AverageMeter()
+  losses, scores, batch_losses = AverageMeter(), AverageMeter(), []
 
   optimizer = initialize_optimizer(model.parameters(), config)
   scheduler = initialize_scheduler(optimizer, config)
-  #weights = [0.5, 0.5, 5.0, 5.0]
-  weights = [0.5, 2]
-  class_weights = torch.FloatTensor(weights).cuda()
-  criterion = nn.CrossEntropyLoss(weight=class_weights, ignore_index=config.ignore_label)
+  alpha, gamma, eps  = 1, 2, 1e-6
 
   writer = SummaryWriter(log_dir=config.log_dir)
 
@@ -95,12 +94,14 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         soutput = model(*inputs)
         # The output of the network is not sorted
         target = target.long().to(device)
-
-        loss = criterion(soutput.F, target.long())
+        input_soft = nn.functional.softmax(soutput.F, dim=1) + eps
+        weight = torch.pow(-input_soft + 1., gamma)
+        loss = (-alpha * weight * torch.log(input_soft)).mean()
 
         # Compute and accumulate gradient
         loss /= config.iter_size
         batch_loss += loss.item()
+        batch_losses.append(batch_loss)
         loss.backward()
 
       # Update number of steps
@@ -143,13 +144,21 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
       # Validation
       if curr_iter % config.val_freq == 0:
-        val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)
+        val_miou, val_losses = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)
+
+        # HERE PRINT TRAIN/VAL LOSS
+
+
+
         if val_miou > best_val_miou:
           best_val_miou = val_miou
           best_val_iter = curr_iter
           checkpoint(model, optimizer, epoch, curr_iter, config, best_val_miou, best_val_iter,
                      "best_val")
         logging.info("Current best mIoU: {:.3f} at iter {}".format(best_val_miou, best_val_iter))
+
+        
+
 
         # Recover back
         model.train()

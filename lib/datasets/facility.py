@@ -16,7 +16,7 @@ class FacilityVoxelizationDatasetBase:
   CLIP_BOUND = None
   LOCFEAT_IDX = 2
   ROTATION_AXIS = 'z'
-  NUM_LABELS = 2
+  NUM_LABELS = 4
 
     # CLASSES = ['structure', 'pequipment' ]
 
