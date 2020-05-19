@@ -52,6 +52,11 @@ def print_info(iteration,
 
 def average_precision(prob_np, target_np):
   num_class = prob_np.shape[1]
+  print("num_classe : ",num_class)
+  print("prob_np : {0} \n{1}".format(prob_np.shape, prob_np))
+  print("target_np : {0} \n{1}".format(target_np.shape, target_np))
+  if num_class == 2:
+    num_class += 1
   label = label_binarize(target_np, classes=list(range(num_class)))
   with np.errstate(divide='ignore', invalid='ignore'):
     return average_precision_score(label, prob_np, None)
@@ -233,12 +238,6 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
   logging.info("Finished test. Elapsed time: {:.4f}".format(global_time))
 
   if validation:
-    # plot loss graph
-    plt.plot(batch_losses)
-    plt.xlabel('epoch')
-    plt.ylabel('loss')
-    plt.show()
-
     return losses.avg, scores.avg, np.nanmean(ap_class), np.nanmean(per_class_iu(hist)) * 100, batch_losses
 
   else:

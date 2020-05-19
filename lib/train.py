@@ -26,6 +26,7 @@ def validate(model, val_data_loader, writer, curr_iter, config, transform_data_f
 
 
 def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
+  all_losses = []
   device = get_torch_device(config.is_cuda)
   # Set up the train flag for batch normalization
   model.train()
@@ -148,7 +149,11 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
         # HERE PRINT TRAIN/VAL LOSS
 
-
+        plt.plot(batch_losses)
+        plt.plot(val_losses)
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.show()
 
         if val_miou > best_val_miou:
           best_val_miou = val_miou
@@ -178,7 +183,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
   # Save the final model
   checkpoint(model, optimizer, epoch, curr_iter, config, best_val_miou, best_val_iter)
-  val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)
+  val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)[0]
   if val_miou > best_val_miou:
     best_val_miou = val_miou
     best_val_iter = curr_iter
