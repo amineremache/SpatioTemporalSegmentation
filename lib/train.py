@@ -16,8 +16,8 @@ from MinkowskiEngine import SparseTensor
 import matplotlib.pyplot as plt
 
 
-def validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn):
-  v_loss, v_score, v_mAP, v_mIoU, val_losses = test(model, val_data_loader, config, transform_data_fn,validation=True)
+def validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn,epoch):
+  v_loss, v_score, v_mAP, v_mIoU, val_losses = test(model, val_data_loader, config, transform_data_fn,validation=True,epoch=epoch)
   writer.add_scalar('validation/mIoU', v_mIoU, curr_iter)
   writer.add_scalar('validation/loss', v_loss, curr_iter)
   writer.add_scalar('validation/precision_at_1', v_score, curr_iter)
@@ -67,7 +67,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
   data_iter = data_loader.__iter__()
 
-  while not is_training:
+  while is_training:
     for iteration in range(len(data_loader) // config.iter_size):
       optimizer.zero_grad()
       data_time, batch_loss = 0, 0
@@ -98,7 +98,9 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         input_soft = nn.functional.softmax(soutput.F, dim=1) + eps
         weight = torch.pow(-input_soft + 1., gamma)
         loss = (-alpha * weight * torch.log(input_soft)).mean()
-
+        with open(config.log_dir+"/train_loss.txt",'a') as train_loss_log:
+          train_loss_log.writelines('{0}, {1}\n'.format(loss,epoch))
+        train_loss_log.close()
         # Compute and accumulate gradient
         loss /= config.iter_size
         batch_loss += loss.item()
@@ -145,15 +147,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
       # Validation
       if curr_iter % config.val_freq == 0:
-        val_miou, val_losses = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)
-
-        # HERE PRINT TRAIN/VAL LOSS
-
-        plt.plot(batch_losses)
-        plt.plot(val_losses)
-        plt.xlabel('Epochs')
-        plt.ylabel('Loss')
-        plt.show()
+        val_miou, val_losses = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn,epoch)
 
         if val_miou > best_val_miou:
           best_val_miou = val_miou
@@ -161,8 +155,6 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
           checkpoint(model, optimizer, epoch, curr_iter, config, best_val_miou, best_val_iter,
                      "best_val")
         logging.info("Current best mIoU: {:.3f} at iter {}".format(best_val_miou, best_val_iter))
-
-        
 
 
         # Recover back
@@ -183,7 +175,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
   # Save the final model
   checkpoint(model, optimizer, epoch, curr_iter, config, best_val_miou, best_val_iter)
-  val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)[0]
+  val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn,epoch)[0]
   if val_miou > best_val_miou:
     best_val_miou = val_miou
     best_val_iter = curr_iter

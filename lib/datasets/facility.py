@@ -16,9 +16,8 @@ class FacilityVoxelizationDatasetBase:
   CLIP_BOUND = None
   LOCFEAT_IDX = 2
   ROTATION_AXIS = 'z'
-  NUM_LABELS = 4
-
-    # CLASSES = ['structure', 'pequipment' ]
+  NUM_LABELS = 8
+  INTENSITY = False
 
   IS_FULL_POINTCLOUD_EVAL = True
 
@@ -46,10 +45,10 @@ class FacilityVoxelizationDatasetBase:
       print(f'Evaluating subcloud {subcloud_idx} / {len(subcloud_dict)}.')
       # Join all predictions and query pointclouds of split data.
       pred = np.zeros((0, 4))
-      pointcloud = np.zeros((0, 7))
+      pointcloud = np.zeros((0, 8)) # CHANGED FROM 7 TO 8 BECAUSE I ASSUME 7 WAS 6 XYZRGB AND 1 LABEL AND NOW I ADDED INTENSITY
       for i in subcloud_list:
         pred = np.vstack((pred, np.load(os.path.join(pred_dir, pred_list[i]))))
-        pointcloud = np.vstack((pointcloud, self.load_ply(i)[0]))
+        pointcloud = np.vstack((pointcloud, self.load_ply(i,FacilityVoxelizationDatasetBase.INTENSITY)[0]))
       # Deduplicate all query pointclouds of split data.
       pointcloud = np.array(list(set(tuple(l) for l in pointcloud.tolist())))
       # Run test for each subcloud.
@@ -86,9 +85,9 @@ class FacilityVoxelizationDatasetBase:
 class FacilityDataset(FacilityVoxelizationDatasetBase, VoxelizationDataset):
 
   # Voxelization arguments
-  VOXEL_SIZE = 500  # 0.05 = 5cm
+  VOXEL_SIZE = 0.05  # 0.05 = 5cm
 
-  CLIP_BOUND = 10000  # [-N, N]
+  CLIP_BOUND = 4  # [-N, N]
   TEST_CLIP_BOUND = None
 
   # Augmentation arguments
@@ -137,12 +136,15 @@ class FacilityDataset(FacilityVoxelizationDatasetBase, VoxelizationDataset):
         config=config)
 
   @cache
-  def load_ply(self, index):
+  def load_ply(self, index, intensity=False):
     filepath = self.data_root / self.data_paths[index]
     plydata = PlyData.read(filepath)
     data = plydata.elements[0].data
     coords = np.array([data['x'], data['y'], data['z']], dtype=np.float32).T
-    feats = np.array([data['red'], data['green'], data['blue']], dtype=np.float32).T
+    if not intensity:
+      feats = np.array([data['red'], data['green'], data['blue']], dtype=np.float32).T
+    else:
+      feats = np.array([data['red'], data['green'], data['blue'], data['intensity']], dtype=np.float32).T
     labels = np.array(data['label'], dtype=np.int32)
     return coords, feats, labels, None
 
@@ -153,11 +155,10 @@ class FacilityTestDataset(FacilityDataset):
         DatasetPhase.Train: ['area1.txt', 'area2.txt', 'area3.txt', 'area4.txt', 'area6.txt'],
         DatasetPhase.Val: 'area5.txt',
         DatasetPhase.Test: 'area5.txt',
-        #DatasetPhase.Test: ['area1.txt', 'area2.txt', 'area3.txt', 'area4.txt', 'area5.txt', 'area6.txt']
     }
 
 
-def test(config):
+def test(config, intensity=False):
   """Test point cloud data loader.
   """
   from torch.utils.data import DataLoader
@@ -168,6 +169,8 @@ def test(config):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(coords[:, :3].float().numpy())
     pcd.colors = o3d.utility.Vector3dVector(feats[:, :3].numpy() / 255)
+    if intensity:
+      pcd.intensities = o3d.utility.Vector3dVector(feats[:, 3:3].numpy())
     return pcd
 
   timer = Timer()

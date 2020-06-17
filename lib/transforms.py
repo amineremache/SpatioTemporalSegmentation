@@ -54,7 +54,7 @@ class ChromaticAutoContrast(object):
       contrast_feats = (feats[:, :3] - lo) * scale
 
       blend_factor = random.random() if self.randomize_blend_factor else self.blend_factor
-      feats[:, :3] = (1 - blend_factor) * feats + blend_factor * contrast_feats
+      feats[:, :3] = (1 - blend_factor) * feats[:, :3] + blend_factor * contrast_feats
     return coords, feats, labels
 
 

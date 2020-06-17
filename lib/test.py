@@ -18,7 +18,6 @@ from lib.utils import Timer, AverageMeter, precision_at_one, fast_hist, per_clas
     permute_pointcloud, save_rotation_pred
 
 from MinkowskiEngine import SparseTensor
-from lib.utils import FocalLoss, focal_loss 
 
 def print_info(iteration,
                max_iteration,
@@ -52,9 +51,6 @@ def print_info(iteration,
 
 def average_precision(prob_np, target_np):
   num_class = prob_np.shape[1]
-  print("num_classe : ",num_class)
-  print("prob_np : {0} \n{1}".format(prob_np.shape, prob_np))
-  print("target_np : {0} \n{1}".format(target_np.shape, target_np))
   if num_class == 2:
     num_class += 1
   label = label_binarize(target_np, classes=list(range(num_class)))
@@ -62,7 +58,7 @@ def average_precision(prob_np, target_np):
     return average_precision_score(label, prob_np, None)
 
 
-def test(model, data_loader, config, transform_data_fn=None, has_gt=True, validation=True): # REMEMBER TO CHANGE THIS TO NONE
+def test(model, data_loader, config, transform_data_fn=None, has_gt=True, validation=None,epoch=None):
   device = get_torch_device(config.is_cuda)
   dataset = data_loader.dataset
   num_labels = dataset.NUM_LABELS
@@ -81,8 +77,10 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
       logging.info("=> loaded checkpoint '{}' (epoch {})".format(checkpoint_fn, state['epoch']))
     else:
       raise ValueError("=> no checkpoint found at '{}'".format(checkpoint_fn))
-
-  logging.info('===> Start testing')
+  if validation:
+    logging.info('===> Start validating')
+  else:
+    logging.info('===> Start testing')
 
   global_timer.tic()
   data_iter = data_loader.__iter__()
@@ -134,7 +132,6 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
       output = soutput.F
 
       pred = get_prediction(dataset, output, target).int()
-      
       iter_time = iter_timer.toc(False)
 
       all_preds.append(pred.cpu().detach().numpy())
@@ -152,11 +149,13 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
         target_np = target.numpy()
         num_sample = target_np.shape[0]
         target = target.to(device)
-        
-        # focal loss 
+        # focal loss
         input_soft = nn.functional.softmax(output, dim=1) + eps
         weight = torch.pow(-input_soft + 1., gamma)
         focal_loss = (-alpha * weight * torch.log(input_soft)).mean()
+        with open(config.log_dir+"/val_loss_vox_{0}.txt".format(data_loader.dataset.VOXEL_SIZE),'a') as val_loss_file:
+          val_loss_file.writelines('{0}, {1}\n'.format(focal_loss,epoch))
+        val_loss_file.close()
 
         batch_losses.append(focal_loss)
 
@@ -174,6 +173,14 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
           ap_class = np.nanmean(aps, 0) * 100.
 
       if iteration % config.test_stat_freq == 0 and iteration > 0:
+        preds = np.concatenate(all_preds)
+        targets = np.concatenate(all_labels)
+        to_ignore = [i for i in range(len(targets)) if targets[i] == 255]
+        preds_trunc = [preds[i] for i in range(len(preds)) if i not in to_ignore]
+        targets_trunc = [targets[i] for i in range(len(targets)) if i not in to_ignore]
+        cm = confusion_matrix(targets_trunc,preds_trunc,normalize='true')
+        np.savetxt(config.log_dir+'/confusion_matrix_epoch_{0}_vox_{1}.txt'.format(epoch,data_loader.dataset.VOXEL_SIZE),cm)
+
         reordered_ious = dataset.reorder_result(ious)
         reordered_ap_class = dataset.reorder_result(ap_class)
         class_names = dataset.get_classnames()
@@ -219,22 +226,11 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
     preds_trunc = [preds[i] for i in range(len(preds)) if i not in to_ignore]
     targets_trunc = [targets[i] for i in range(len(targets)) if i not in to_ignore]
     cm = confusion_matrix(targets_trunc,preds_trunc,normalize='true')
-    
-    ax= plt.subplot()
-    sns.set(font_scale=1.4)
-    sns.heatmap(cm, fmt='.2%', annot=True, ax = ax, annot_kws={"size": 16}) 
-    ax.set_ylabel('True labels')
-    ax.set_xlabel('Predicted labels') 
-    #ax.xaxis.set_ticklabels(['structure', 'pequipment'])
-    #ax.yaxis.set_ticklabels(['structure', 'pequipment'])
-    ax.xaxis.set_ticklabels(['CivilSt','Equipment','PipesnD','SteelSt'])
-    ax.yaxis.set_ticklabels(['CivilSt','Equipment','PipesnD','SteelSt'])
-    plt.show()
+    np.savetxt(config.log_dir+'/confusion_matrix_test_vox_{0}.txt'.format(data_loader.dataset.VOXEL_SIZE),cm)
 
   if config.test_original_pointcloud:
     logging.info('===> Start testing on original pointcloud space.')
     dataset.test_pointcloud(save_pred_dir)
-
   logging.info("Finished test. Elapsed time: {:.4f}".format(global_time))
 
   if validation:

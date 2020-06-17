@@ -9,14 +9,14 @@ from lib.pc_utils import save_point_cloud
 
 import MinkowskiEngine as ME
 
-FACILITY_IN_PATH = '/home/neofly/Desktop/Desktop/facility/4_classes/data'
-FACILITY_OUT_PATH = '/home/neofly/dev/github/facility/results/facility_4'
+FACILITY_IN_PATH = '/home/ubuntu/data/storengy/s3d_structure'
+FACILITY_OUT_PATH = '/home/ubuntu/data/storengy/ply_no_intensity'
 
 
 class FacilityDatasetConverter:
 
-  #CLASSES = ['structure', 'pequipment']
-  CLASSES = ['CivilSt','Equipment','PipesnD','SteelSt']
+  INTENSITY = False
+  CLASSES = ['ACTUATOR', 'BOX', 'CABLE', 'FLOOR', 'GAUGE', 'PIPE', 'PIPE_SUPPORT', 'VALVE']
   TRAIN_TEXT = 'train'
   VAL_TEXT = 'val'
   TEST_TEXT = 'test'
@@ -26,13 +26,19 @@ class FacilityDatasetConverter:
     # Read txt file and parse its content.
     with open(txtfile) as f:
       f.readline()
-      pointcloud = [l.split() for l in f if l != '\n']
+      pointcloud = [l.split(',') for l in f if l != '\n']
     # Load point cloud to named numpy array.
     pointcloud = np.array(pointcloud).astype(np.float32)
-    assert pointcloud.shape[1] == 6
-    xyz = pointcloud[:, :3].astype(np.float32)
-    rgb = pointcloud[:, 3:].astype(np.uint8)
-    return xyz, rgb
+    if FacilityDatasetConverter.INTENSITY:
+      assert pointcloud.shape[1] == 7
+      xyz = pointcloud[:, :3].astype(np.float32)
+      rgbi = pointcloud[:, 3:].astype(np.uint8)
+      #i = pointcloud[:, 6].astype(np.uint8)
+      return xyz, rgbi
+    else:
+      xyz = pointcloud[:, :3].astype(np.float32)
+      rgb = pointcloud[:, 3:6].astype(np.uint8)
+      return xyz, rgb
 
   @classmethod
   def convert_to_ply(cls, root_path, out_path):
@@ -52,16 +58,16 @@ class FacilityDatasetConverter:
         continue
 
       annotation, _ = os.path.split(txtfile)
-      subclouds = glob.glob(os.path.join(annotation, 'Annotations/*.txt'))
-      coords, feats, labels = [], [], []
+      subclouds = glob.glob(os.path.join(annotation, 'Annotations/*.txt')) 
+      coords, feats, labels =  [], [], []
       for inst, subcloud in enumerate(subclouds):
         # Read ply file and parse its rgb values.
-        xyz, rgb = cls.read_txt(subcloud)
+        xyz, rgbi = cls.read_txt(subcloud)
         _, annotation_subfile = os.path.split(subcloud)
         clsidx = cls.CLASSES.index(annotation_subfile.split('_')[0])
 
         coords.append(xyz)
-        feats.append(rgb)
+        feats.append(rgbi)
         labels.append(np.ones((len(xyz), 1), dtype=np.int32) * clsidx)
 
       if len(coords) == 0:
@@ -77,13 +83,13 @@ class FacilityDatasetConverter:
             labels,
             return_index=True,
             ignore_label=255,
-            quantization_size=0.01  # 1cm
+            quantization_size=0.001  # 0.01 = 1cm
         )
         pointcloud = np.concatenate((coords[inds], feats[inds], collabels[:, None]), axis=1)
 
         # Write ply file.
         mkdir_p(target_path)
-        save_point_cloud(pointcloud, out_file, with_label=True, verbose=True)
+        save_point_cloud(pointcloud, out_file, with_label=True, verbose=True, intensity=FacilityDatasetConverter.INTENSITY)
 
 
 def generate_splits(facility_out_path):
