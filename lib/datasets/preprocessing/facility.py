@@ -9,14 +9,22 @@ from lib.pc_utils import save_point_cloud
 
 import MinkowskiEngine as ME
 
+<<<<<<< HEAD
 FACILITY_IN_PATH = '/home/ubuntu/data/storengy/no_intensity'
+=======
+FACILITY_IN_PATH = '/home/ubuntu/data/storengy/s3d_structure'
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
 FACILITY_OUT_PATH = '/home/ubuntu/data/storengy/ply_no_intensity'
 
 
 class FacilityDatasetConverter:
 
   INTENSITY = False
+<<<<<<< HEAD
   CLASSES = ['ACTUATOR', 'BOX', 'CABLE', 'FLOOR', 'GAUGE','PIPESUPPORT','PIPE','VALVE']
+=======
+  CLASSES = ['ACTUATOR', 'BOX', 'CABLE', 'FLOOR', 'GAUGE', 'PIPE', 'PIPE_SUPPORT', 'VALVE']
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
   TRAIN_TEXT = 'train'
   VAL_TEXT = 'val'
   TEST_TEXT = 'test'
@@ -83,7 +91,11 @@ class FacilityDatasetConverter:
             labels,
             return_index=True,
             ignore_label=255,
+<<<<<<< HEAD
             quantization_size=0.00001 # 0.01 = 1cm
+=======
+            quantization_size=0.001  # 0.01 = 1cm
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
         )
         pointcloud = np.concatenate((coords[inds], feats[inds], collabels[:, None]), axis=1)
 

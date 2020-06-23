@@ -44,7 +44,7 @@ net_arg.add_argument(
 
 # Wrappers
 net_arg.add_argument('--wrapper_type', default='None', type=str, help='Wrapper on the network')
-net_arg.add_argument(
+net_arg.add_argument(   
     '--wrapper_region_type',
     default=1,
     type=int,
@@ -150,8 +150,13 @@ train_arg = add_argument_group('Training')
 train_arg.add_argument('--is_train', type=str2bool, default=True)
 train_arg.add_argument('--stat_freq', type=int, default=10, help='print frequency')
 train_arg.add_argument('--test_stat_freq', type=int, default=100, help='print frequency')
+<<<<<<< HEAD
 train_arg.add_argument('--save_freq', type=int, default=100, help='save frequency')
 train_arg.add_argument('--val_freq', type=int, default=100, help='validation frequency')
+=======
+train_arg.add_argument('--save_freq', type=int, default=50, help='save frequency')
+train_arg.add_argument('--val_freq', type=int, default=1, help='validation frequency')
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
 train_arg.add_argument(
     '--empty_cache_freq', type=int, default=1, help='Clear pytorch cache frequency')
 train_arg.add_argument('--train_phase', type=str, default='train', help='Dataset for training')
@@ -214,7 +219,7 @@ test_arg.add_argument(
 misc_arg = add_argument_group('Misc')
 misc_arg.add_argument('--is_cuda', type=str2bool, default=True)
 misc_arg.add_argument('--load_path', type=str, default='')
-misc_arg.add_argument('--log_step', type=int, default=50)
+misc_arg.add_argument('--log_step', type=int, default=10)
 misc_arg.add_argument('--log_level', type=str, default='INFO', choices=['INFO', 'DEBUG', 'WARN'])
 misc_arg.add_argument('--num_gpu', type=str2bool, default=1)
 misc_arg.add_argument('--seed', type=int, default=123)

@@ -71,7 +71,10 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
   data_iter = data_loader.__iter__()
 
   while is_training:
+<<<<<<< HEAD
     print("********************************** epoch N° {0} ************************".format(epoch))
+=======
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
     for iteration in range(len(data_loader) // config.iter_size):
       print("####### Iteration N° {0}".format(iteration))
       optimizer.zero_grad()
@@ -106,6 +109,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         print("target : {0}\ntarget_len : {1}".format(target,len(target)))
         print("target [0]: {0}".format(target[0]))
         input_soft = nn.functional.softmax(soutput.F, dim=1) + eps
+<<<<<<< HEAD
         print("input_soft[0] : {0}".format(input_soft[0]))
         focal_weight = torch.pow(-input_soft + 1., gamma)
         print("focal_weight : {0}\nweight[0] : {1}".format(focal_weight,focal_weight[0]))
@@ -113,6 +117,13 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         loss = criterion(soutput.F, target.long())
         print("focal_loss :{0}\nloss : {1}".format(focal_loss,loss))
 
+=======
+        weight = torch.pow(-input_soft + 1., gamma)
+        loss = (-alpha * weight * torch.log(input_soft)).mean()
+        with open(config.log_dir+"/train_loss.txt",'a') as train_loss_log:
+          train_loss_log.writelines('{0}, {1}\n'.format(loss,epoch))
+        train_loss_log.close()
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
         # Compute and accumulate gradient
         loss /= config.iter_size
         #batch_loss += loss

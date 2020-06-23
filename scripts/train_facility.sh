@@ -35,8 +35,19 @@ CUDA_LAUNCH_BLOCKING=1 python -m main \
     --conv1_kernel_size 5 \
     --log_dir $LOG_DIR \
     --lr 1e-1 \
+<<<<<<< HEAD
     --max_iter 500 \
     --data_aug_color_trans_ratio 0.05 \
     --data_aug_color_jitter_std 0.005 \
     $3 2>&1 | tee -a "$LOG"
 #--resume $LOG_DIR/../test \
+=======
+    --max_iter 200 \
+    --data_aug_color_trans_ratio 0.05 \
+    --data_aug_color_jitter_std 0.005 \
+    --val_freq 1 \
+    --train_phase train \
+    #--resume $LOG_DIR/.. \
+    --is_train True \
+    $3 2>&1 | tee -a "$LOG"
+>>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
