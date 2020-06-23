@@ -1,7 +1,0 @@
-Area_1/subcloud_1.ply
-Area_1/subcloud_4.ply
-Area_1/subcloud_3.ply
-Area_1/subcloud_5.ply
-Area_1/subcloud_7.ply
-Area_1/subcloud_6.ply
-Area_1/subcloud_2.ply

@@ -100,7 +100,7 @@ class StanfordDataset(StanfordVoxelizationDatasetBase, VoxelizationDataset):
       ((-np.pi / 32, np.pi / 32), (-np.pi / 32, np.pi / 32), (-np.pi, np.pi))
   TRANSLATION_AUGMENTATION_RATIO_BOUND = ((-0.2, 0.2), (-0.2, 0.2), (-0.05, 0.05))
 
-  AUGMENT_COORDS_TO_FEATS = True
+  AUGMENT_COORDS_TO_FEATS = False
   NUM_IN_CHANNEL = 6
 
   def __init__(self,

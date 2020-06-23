@@ -136,22 +136,22 @@ data_arg.add_argument(
 data_arg.add_argument(
     '--stanford3d_path',
     type=str,
-    default='/home/chrischoy/datasets/Stanford3D',
+    default='/home/ubuntu/data/s3d',
     help='Stanford precropped dataset root dir')
 
 data_arg.add_argument(
     '--facility_path',
     type=str,
-    default='/home/neofly/dev/github/SpatioTemporalSegmentation/results/facility_4',
+    default='/home/ubuntu/data/storengy/ply_no_intensity',
     help='Facility precropped dataset root dir')
 
 # Training / test parameters
 train_arg = add_argument_group('Training')
 train_arg.add_argument('--is_train', type=str2bool, default=True)
-train_arg.add_argument('--stat_freq', type=int, default=40, help='print frequency')
+train_arg.add_argument('--stat_freq', type=int, default=10, help='print frequency')
 train_arg.add_argument('--test_stat_freq', type=int, default=100, help='print frequency')
-train_arg.add_argument('--save_freq', type=int, default=1000, help='save frequency')
-train_arg.add_argument('--val_freq', type=int, default=1000, help='validation frequency')
+train_arg.add_argument('--save_freq', type=int, default=100, help='save frequency')
+train_arg.add_argument('--val_freq', type=int, default=100, help='validation frequency')
 train_arg.add_argument(
     '--empty_cache_freq', type=int, default=1, help='Clear pytorch cache frequency')
 train_arg.add_argument('--train_phase', type=str, default='train', help='Dataset for training')
@@ -207,7 +207,7 @@ test_arg.add_argument(
 test_arg.add_argument(
     '--test_original_pointcloud',
     type=str2bool,
-    default=True,
+    default=False,
     help='Test on the original pointcloud space as given by the dataset using kd-tree.')
 
 # Misc
@@ -223,3 +223,4 @@ misc_arg.add_argument('--seed', type=int, default=123)
 def get_config():
   config = parser.parse_args()
   return config  # Training settings
+

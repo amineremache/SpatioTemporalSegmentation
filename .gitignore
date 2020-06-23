@@ -12,6 +12,9 @@ __pycache__/
 # Training
 outputs/
 results/
+demo/*.pth
+demo/*.ply
+log.txt
 
 # Profiling
 callgrind.out*

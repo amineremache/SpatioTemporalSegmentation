@@ -14,10 +14,11 @@ from lib.solvers import initialize_optimizer, initialize_scheduler
 from MinkowskiEngine import SparseTensor
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn):
-  v_loss, v_score, v_mAP, v_mIoU, val_losses = test(model, val_data_loader, config, transform_data_fn,validation=True)
+def validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn,epoch):
+  v_loss, v_score, v_mAP, v_mIoU, val_losses = test(model, val_data_loader, config, transform_data_fn,validation=True,epoch=epoch)
   writer.add_scalar('validation/mIoU', v_mIoU, curr_iter)
   writer.add_scalar('validation/loss', v_loss, curr_iter)
   writer.add_scalar('validation/precision_at_1', v_score, curr_iter)
@@ -35,10 +36,11 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
   writer = SummaryWriter(log_dir=config.log_dir)
   data_timer, iter_timer = Timer(), Timer()
   data_time_avg, iter_time_avg = AverageMeter(), AverageMeter()
-  losses, scores, batch_losses = AverageMeter(), AverageMeter(), []
+  losses, scores, batch_losses = AverageMeter(), AverageMeter(), {}
 
   optimizer = initialize_optimizer(model.parameters(), config)
   scheduler = initialize_scheduler(optimizer, config)
+  criterion = nn.CrossEntropyLoss(ignore_index=config.ignore_label)
   alpha, gamma, eps  = 1, 2, 1e-6
 
   writer = SummaryWriter(log_dir=config.log_dir)
@@ -65,24 +67,29 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
     else:
       raise ValueError("=> no checkpoint found at '{}'".format(checkpoint_fn))
 
+
   data_iter = data_loader.__iter__()
 
-  while not is_training:
+  while is_training:
+    print("********************************** epoch N° {0} ************************".format(epoch))
     for iteration in range(len(data_loader) // config.iter_size):
+      print("####### Iteration N° {0}".format(iteration))
       optimizer.zero_grad()
       data_time, batch_loss = 0, 0
       iter_timer.tic()
-
       for sub_iter in range(config.iter_size):
+        print("------------- Sub_iteration N° {0}".format(sub_iter))
         # Get training data
         data_timer.tic()
         coords, input, target = data_iter.next()
+        print("len of coords : {0}".format(len(coords)) )
 
         # For some networks, making the network invariant to even, odd coords is important
         coords[:, :3] += (torch.rand(3) * 100).type_as(coords)
 
         # Preprocess input
         color = input[:, :3].int()
+
         if config.normalize_color:
           input[:, :3] = input[:, :3] / 255. - 0.5
         sinput = SparseTensor(input, coords).to(device)
@@ -95,14 +102,22 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         soutput = model(*inputs)
         # The output of the network is not sorted
         target = target.long().to(device)
+        print("count of classes : {0}".format(np.unique(target.cpu().numpy(),return_counts=True)))
+        print("target : {0}\ntarget_len : {1}".format(target,len(target)))
+        print("target [0]: {0}".format(target[0]))
         input_soft = nn.functional.softmax(soutput.F, dim=1) + eps
-        weight = torch.pow(-input_soft + 1., gamma)
-        loss = (-alpha * weight * torch.log(input_soft)).mean()
+        print("input_soft[0] : {0}".format(input_soft[0]))
+        focal_weight = torch.pow(-input_soft + 1., gamma)
+        print("focal_weight : {0}\nweight[0] : {1}".format(focal_weight,focal_weight[0]))
+        focal_loss = (-alpha * focal_weight * torch.log(input_soft)).mean()
+        loss = criterion(soutput.F, target.long())
+        print("focal_loss :{0}\nloss : {1}".format(focal_loss,loss))
 
         # Compute and accumulate gradient
         loss /= config.iter_size
+        #batch_loss += loss
         batch_loss += loss.item()
-        batch_losses.append(batch_loss)
+        print("batch_loss : {0}".format(batch_loss))
         loss.backward()
 
       # Update number of steps
@@ -145,15 +160,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
       # Validation
       if curr_iter % config.val_freq == 0:
-        val_miou, val_losses = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)
-
-        # HERE PRINT TRAIN/VAL LOSS
-
-        plt.plot(batch_losses)
-        plt.plot(val_losses)
-        plt.xlabel('Epochs')
-        plt.ylabel('Loss')
-        plt.show()
+        val_miou, val_losses = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn,epoch)
 
         if val_miou > best_val_miou:
           best_val_miou = val_miou
@@ -161,8 +168,6 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
           checkpoint(model, optimizer, epoch, curr_iter, config, best_val_miou, best_val_iter,
                      "best_val")
         logging.info("Current best mIoU: {:.3f} at iter {}".format(best_val_miou, best_val_iter))
-
-        
 
 
         # Recover back
@@ -172,9 +177,12 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
         # Clear cache
         torch.cuda.empty_cache()
 
+      batch_losses[epoch] = batch_loss
       # End of iteration
       curr_iter += 1
-
+    with open(config.log_dir+"/train_loss.txt",'a') as train_loss_log:
+      train_loss_log.writelines('{0}, {1}\n'.format(batch_losses[epoch],epoch))
+    train_loss_log.close()
     epoch += 1
 
   # Explicit memory cleanup
@@ -183,7 +191,7 @@ def train(model, data_loader, val_data_loader, config, transform_data_fn=None):
 
   # Save the final model
   checkpoint(model, optimizer, epoch, curr_iter, config, best_val_miou, best_val_iter)
-  val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn)[0]
+  val_miou = validate(model, val_data_loader, writer, curr_iter, config, transform_data_fn,epoch)[0]
   if val_miou > best_val_miou:
     best_val_miou = val_miou
     best_val_iter = curr_iter

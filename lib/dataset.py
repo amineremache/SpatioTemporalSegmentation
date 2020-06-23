@@ -195,8 +195,10 @@ class VoxelizationDataset(VoxelizationDatasetBase):
   # Coordinate Augmentation Arguments: Unlike feature augmentation, coordinate
   # augmentation has to be done before voxelization
   SCALE_AUGMENTATION_BOUND = (0.9, 1.1)
-  ROTATION_AUGMENTATION_BOUND = ((-np.pi / 6, np.pi / 6), (-np.pi, np.pi), (-np.pi / 6, np.pi / 6))
-  TRANSLATION_AUGMENTATION_RATIO_BOUND = ((-0.2, 0.2), (-0.05, 0.05), (-0.2, 0.2))
+  """ROTATION_AUGMENTATION_BOUND = ((-np.pi / 6, np.pi / 6), (-np.pi, np.pi), (-np.pi / 6, np.pi / 6))
+  TRANSLATION_AUGMENTATION_RATIO_BOUND = ((-0.2, 0.2), (-0.05, 0.05), (-0.2, 0.2))"""
+  ROTATION_AUGMENTATION_BOUND = None
+  TRANSLATION_AUGMENTATION_RATIO_BOUND = None
   ELASTIC_DISTORT_PARAMS = None
 
   # MISC.
@@ -244,16 +246,14 @@ class VoxelizationDataset(VoxelizationDatasetBase):
     label_map = {}
     n_used = 0
     for l in range(self.NUM_LABELS):
-      if self.IGNORE_LABELS is not None:
-        if l in self.IGNORE_LABELS:
-          label_map[l] = self.ignore_mask
+      if l in self.IGNORE_LABELS:
+        label_map[l] = self.ignore_mask
       else:
         label_map[l] = n_used
         n_used += 1
     label_map[self.ignore_mask] = self.ignore_mask
     self.label_map = label_map
-    if self.IGNORE_LABELS is not None:
-      self.NUM_LABELS -= len(self.IGNORE_LABELS)
+    self.NUM_LABELS -= len(self.IGNORE_LABELS)
 
   def _augment_coords_to_feats(self, coords, feats, labels=None):
     norm_coords = coords - coords.mean(0)
@@ -270,6 +270,7 @@ class VoxelizationDataset(VoxelizationDatasetBase):
 
   def __getitem__(self, index):
     coords, feats, labels, center = self.load_ply(index)
+    print("Original number of points loaded from ply : {0}".format(len(coords)))
     # Downsample the pointcloud with finer voxel size before transformation for memory and speed
     if self.PREVOXELIZATION_VOXEL_SIZE is not None:
       inds = ME.utils.sparse_quantize(
@@ -285,6 +286,7 @@ class VoxelizationDataset(VoxelizationDatasetBase):
     coords, feats, labels, transformation = self.voxelizer.voxelize(
         coords, feats, labels, center=center)
 
+    print("Number of voxels : {0}".format(len(coords)))
     # map labels not used for evaluation to ignore_label
     if self.input_transform is not None:
       coords, feats, labels = self.input_transform(coords, feats, labels)
@@ -296,11 +298,9 @@ class VoxelizationDataset(VoxelizationDatasetBase):
     # Use coordinate features if config is set
     if self.AUGMENT_COORDS_TO_FEATS:
       coords, feats, labels = self._augment_coords_to_feats(coords, feats, labels)
-
     return_args = [coords, feats, labels]
     if self.return_transformation:
       return_args.append(transformation.astype(np.float32))
-
     return tuple(return_args)
 
 

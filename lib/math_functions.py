@@ -1,5 +1,6 @@
 from scipy.sparse import csr_matrix
 import torch
+from torch.autograd import Variable
 
 
 class SparseMM(torch.autograd.Function):
@@ -68,3 +69,32 @@ def csr_matrix_to_sparse(mat):
       torch.from_numpy(mat.data),
       (torch.from_numpy(row_ind), torch.from_numpy(col_ind)),
       size=torch.Size(mat.shape))
+
+
+"""class FocalLoss(torch.nn.modules.loss._Loss):
+    def __init__(
+        self, gamma: float = 2, alphas: Any = None, size_average: bool = True, normalized: bool = True,
+    ):
+        super(FocalLoss, self).__init__()
+        self._gamma = gamma
+        self._alphas = alphas
+        self.size_average = size_average
+        self.normalized = normalized
+
+    def forward(self, input, target):
+        logpt = F.log_softmax(input, dim=-1)
+        logpt = torch.gather(logpt, -1, target.unsqueeze(-1))
+        logpt = logpt.view(-1)
+        pt = Variable(logpt.data.exp())
+
+        if self._alphas is not None:
+            at = self._alphas.gather(0, target)
+            logpt = logpt * Variable(at)
+
+        if self.normalized:
+            sum_ = 1 / torch.sum((1 - pt) ** self._gamma)
+        else:
+            sum_ = 1
+
+        loss = -1 * sum_ * (1 - pt) ** self._gamma * logpt
+        return loss.sum()"""

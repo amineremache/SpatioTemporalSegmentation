@@ -1,3 +1,1 @@
-Area_3/subcloud_1.ply
-Area_3/subcloud_3.ply
-Area_3/subcloud_2.ply
+Area_3/area_3.ply
