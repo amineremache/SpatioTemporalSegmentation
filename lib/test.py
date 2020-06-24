@@ -148,16 +148,6 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
         target_np = target.numpy()
         num_sample = target_np.shape[0]
         target = target.to(device)
-<<<<<<< HEAD
-=======
-        # focal loss
-        input_soft = nn.functional.softmax(output, dim=1) + eps
-        weight = torch.pow(-input_soft + 1., gamma)
-        focal_loss = (-alpha * weight * torch.log(input_soft)).mean()
-        with open(config.log_dir+"/val_loss_vox_{0}.txt".format(data_loader.dataset.VOXEL_SIZE),'a') as val_loss_file:
-          val_loss_file.writelines('{0}, {1}\n'.format(focal_loss,epoch))
-        val_loss_file.close()
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
 
         """# focal loss
         input_soft = nn.functional.softmax(output, dim=1) + eps
@@ -188,11 +178,7 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
         preds_trunc = [preds[i] for i in range(len(preds)) if i not in to_ignore]
         targets_trunc = [targets[i] for i in range(len(targets)) if i not in to_ignore]
         cm = confusion_matrix(targets_trunc,preds_trunc,normalize='true')
-<<<<<<< HEAD
         np.savetxt(config.log_dir+'/cm_epoch_{0}.txt'.format(epoch),cm)
-=======
-        np.savetxt(config.log_dir+'/confusion_matrix_epoch_{0}_vox_{1}.txt'.format(epoch,data_loader.dataset.VOXEL_SIZE),cm)
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
 
         reordered_ious = dataset.reorder_result(ious)
         reordered_ap_class = dataset.reorder_result(ap_class)
@@ -241,11 +227,7 @@ def test(model, data_loader, config, transform_data_fn=None, has_gt=True, valida
     preds_trunc = [preds[i] for i in range(len(preds)) if i not in to_ignore]
     targets_trunc = [targets[i] for i in range(len(targets)) if i not in to_ignore]
     cm = confusion_matrix(targets_trunc,preds_trunc,normalize='true')
-<<<<<<< HEAD
     np.savetxt(config.log_dir+'/cm.txt',cm)
-=======
-    np.savetxt(config.log_dir+'/confusion_matrix_test_vox_{0}.txt'.format(data_loader.dataset.VOXEL_SIZE),cm)
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
 
   if config.test_original_pointcloud:
     logging.info('===> Start testing on original pointcloud space.')

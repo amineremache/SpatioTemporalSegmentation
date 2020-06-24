@@ -142,7 +142,7 @@ data_arg.add_argument(
 data_arg.add_argument(
     '--facility_path',
     type=str,
-    default='/home/ubuntu/data/storengy/ply_no_intensity',
+    default='/home/ubuntu/data/storengy/ply_9_classes',
     help='Facility precropped dataset root dir')
 
 # Training / test parameters
@@ -150,13 +150,8 @@ train_arg = add_argument_group('Training')
 train_arg.add_argument('--is_train', type=str2bool, default=True)
 train_arg.add_argument('--stat_freq', type=int, default=10, help='print frequency')
 train_arg.add_argument('--test_stat_freq', type=int, default=100, help='print frequency')
-<<<<<<< HEAD
 train_arg.add_argument('--save_freq', type=int, default=100, help='save frequency')
 train_arg.add_argument('--val_freq', type=int, default=100, help='validation frequency')
-=======
-train_arg.add_argument('--save_freq', type=int, default=50, help='save frequency')
-train_arg.add_argument('--val_freq', type=int, default=1, help='validation frequency')
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
 train_arg.add_argument(
     '--empty_cache_freq', type=int, default=1, help='Clear pytorch cache frequency')
 train_arg.add_argument('--train_phase', type=str, default='train', help='Dataset for training')

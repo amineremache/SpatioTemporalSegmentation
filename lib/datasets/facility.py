@@ -16,11 +16,8 @@ class FacilityVoxelizationDatasetBase:
   CLIP_BOUND = None
   LOCFEAT_IDX = 2
   ROTATION_AXIS = 'z'
-  NUM_LABELS = 8
-<<<<<<< HEAD
+  NUM_LABELS = 9
   IGNORE_LABELS = ()
-=======
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
   INTENSITY = False
 
   IS_FULL_POINTCLOUD_EVAL = True
@@ -30,7 +27,7 @@ class FacilityVoxelizationDatasetBase:
       DatasetPhase.Val: 'val.txt',
       DatasetPhase.TrainVal: 'trainval.txt',
       DatasetPhase.Test: 'test.txt'
-  }
+  } # This is default, we're not gonna use this in train, we gonna re-define this dict after.
 
   def test_pointcloud(self, pred_dir):
     print('Running full pointcloud evaluation.')
@@ -49,11 +46,7 @@ class FacilityVoxelizationDatasetBase:
       print(f'Evaluating subcloud {subcloud_idx} / {len(subcloud_dict)}.')
       # Join all predictions and query pointclouds of split data.
       pred = np.zeros((0, 4))
-<<<<<<< HEAD
       pointcloud = np.zeros((0, 7)) # CHANGED FROM 7 TO 8 BECAUSE I ASSUME 7 WAS 6 XYZRGB AND 1 LABEL AND NOW I ADDED INTENSITY
-=======
-      pointcloud = np.zeros((0, 8)) # CHANGED FROM 7 TO 8 BECAUSE I ASSUME 7 WAS 6 XYZRGB AND 1 LABEL AND NOW I ADDED INTENSITY
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
       for i in subcloud_list:
         pred = np.vstack((pred, np.load(os.path.join(pred_dir, pred_list[i]))))
         pointcloud = np.vstack((pointcloud, self.load_ply(i,FacilityVoxelizationDatasetBase.INTENSITY)[0]))
@@ -95,11 +88,7 @@ class FacilityDataset(FacilityVoxelizationDatasetBase, VoxelizationDataset):
   # Voxelization arguments
   VOXEL_SIZE = 0.05  # 0.05 = 5cm
 
-<<<<<<< HEAD
   CLIP_BOUND = None  # [-N, N]
-=======
-  CLIP_BOUND = 4  # [-N, N]
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
   TEST_CLIP_BOUND = None
 
   # Augmentation arguments

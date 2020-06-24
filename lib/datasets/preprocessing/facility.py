@@ -9,22 +9,15 @@ from lib.pc_utils import save_point_cloud
 
 import MinkowskiEngine as ME
 
-<<<<<<< HEAD
-FACILITY_IN_PATH = '/home/ubuntu/data/storengy/no_intensity'
-=======
-FACILITY_IN_PATH = '/home/ubuntu/data/storengy/s3d_structure'
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
-FACILITY_OUT_PATH = '/home/ubuntu/data/storengy/ply_no_intensity'
+data = '9_classes'
+FACILITY_IN_PATH = '/home/ubuntu/data/storengy/raw/{0}'.format(data)
+FACILITY_OUT_PATH = '/home/ubuntu/data/storengy/ply/ply_{0}'.format(data)
 
 
 class FacilityDatasetConverter:
 
   INTENSITY = False
-<<<<<<< HEAD
-  CLASSES = ['ACTUATOR', 'BOX', 'CABLE', 'FLOOR', 'GAUGE','PIPESUPPORT','PIPE','VALVE']
-=======
-  CLASSES = ['ACTUATOR', 'BOX', 'CABLE', 'FLOOR', 'GAUGE', 'PIPE', 'PIPE_SUPPORT', 'VALVE']
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
+  CLASSES = ['ACTUATOR', 'BOX', 'CABLE', 'FLOOR', 'GAUGE','PIPESUPPORT','PIPE', 'STRUCTURE', 'VALVE']
   TRAIN_TEXT = 'train'
   VAL_TEXT = 'val'
   TEST_TEXT = 'test'
@@ -40,7 +33,7 @@ class FacilityDatasetConverter:
     if FacilityDatasetConverter.INTENSITY:
       assert pointcloud.shape[1] == 7
       xyz = pointcloud[:, :3].astype(np.float32)
-      rgbi = pointcloud[:, 3:].astype(np.uint8)
+      rgbi = pointcloud[:, 3:7].astype(np.uint8)
       #i = pointcloud[:, 6].astype(np.uint8)
       return xyz, rgbi
     else:
@@ -91,11 +84,7 @@ class FacilityDatasetConverter:
             labels,
             return_index=True,
             ignore_label=255,
-<<<<<<< HEAD
-            quantization_size=0.00001 # 0.01 = 1cm
-=======
-            quantization_size=0.001  # 0.01 = 1cm
->>>>>>> 5c7b8111948ac609489e36edb941e786de79f25f
+            quantization_size=0.0001 # 0.01 = 1cm
         )
         pointcloud = np.concatenate((coords[inds], feats[inds], collabels[:, None]), axis=1)
 
