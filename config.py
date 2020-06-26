@@ -142,7 +142,7 @@ data_arg.add_argument(
 data_arg.add_argument(
     '--facility_path',
     type=str,
-    default='/home/ubuntu/data/storengy/ply_9_classes',
+    default='/home/ubuntu/data/storengy/ply/ply_9_classes',
     help='Facility precropped dataset root dir')
 
 # Training / test parameters

@@ -22,6 +22,7 @@ mkdir -p $LOG_DIR
 LOG="$LOG_DIR/$TIME.txt"
 
 CUDA_LAUNCH_BLOCKING=1 python -m main \
+    --resume $LOG_DIR/../test \
     --is_train True \
     --train_phase train \
     --val_freq 1 \
